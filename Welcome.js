@@ -1,34 +1,93 @@
-import { useState,useContext } from "react";
+import { useState,useContext, useEffect,useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import MyContext from "./Context";
 
 function Welcome(){
-    const {object,setobj}=useContext(MyContext);
-    const [m,setm]=useState('');
-    const [d,setd]=useState('');
-    const [c,setc]=useState('');
-  
-    function moneyhandler(e){
-setm([e.target.value]);
+    const {load,setload,object,setobject}=useContext(MyContext);
+ const moneyhandler=useRef();
+ const deshandler=useRef();
+ const catehandler=useRef();
+ const e=[];
+
+ //   const [m,setm]=useState('');
+   // const [d,setd]=useState('');
+    //const [c,setc]=useState('');
+    const bsdk=useCallback(async()=>{
+        try{
+            const response =await fetch('https://storedata-1b64f-default-rtdb.firebaseio.com/riya.json')
+        
+if(!response.ok){
+throw new Error('something wenr wrong');
+}
+const data=await response.json();
+for(const key in data){
+ e.push({
+    money:data[key].money,
+    des:data[key].des,
+    cate:data[key].cate,
+ })
+}
+setload(e);
+        }
+   catch(error){
+
     }
-    function catehandler(e){
-        setc([e.target.value]);
-            }
-            function deshandler(e){
-                setd([e.target.value]);
-                    }
+   
+},[])
+
+useEffect(()=>{
+    bsdk();
+      },[object]);
+  
+ 
+  console.log(load)
+   // function moneyhandler(e){
+//setm([e.target.value]);
+  //  }
+    //function catehandler(e){
+      //  setc([e.target.value]);
+        //    }
+          //  function deshandler(e){
+            //    setd([e.target.value]);
+              //      }
  const nav=useNavigate();
  function Submit(e){
 e.preventDefault();
+const m=moneyhandler.current.value;
+const d=deshandler.current.value;
+const c=catehandler.current.value;
 const obj={
     money:m,
     des:d,
     cate:c,
 }
-setobj([...object,obj]);
+setobject(obj);
 
+fetch('https://storedata-1b64f-default-rtdb.firebaseio.com/riya.json', 
+{
+     method:'POST',
+body:JSON.stringify(obj),
+headers:{
+    'Content-type':'aplication/json',
+},
+}).then((res)=>{
+if(res.ok){
+return res.json();
+}else{
+    return res.json().then((data)=>{
+        let errormsg="not a valid email";
+       // if(data && data.error && data.error.message){
+         //   errormsg=data.error.message;
+       // }
+       throw new Error(errormsg);
+    });
 }
-console.log(object);
+}).then((data)=>{
+console.log(data);
+
+})
+}
+
     function move(e){
         e.preventDefault();
         nav('/con');
@@ -62,7 +121,7 @@ return res.json();
       
   
     })
-    }
+}
 
     return(
         <>
@@ -74,22 +133,22 @@ return res.json();
         <hr></hr>
         <form onSubmit={Submit}>
             <label>Money spent</label>
-            <input onChange={moneyhandler}></input>
+            <input ref={moneyhandler}></input>
             <label>Description</label>
-            <input onChange={deshandler}></input>
+            <input ref={deshandler}></input>
             <label>category</label>
-            <select  onChange={catehandler}><option>Food</option>
+            <select ref={catehandler}><option>Food</option>
             <option>Fuel</option>
             <option>Food</option></select>
             <button>Add</button>
         </form>
-     <div>{object.map((item)=>{
-        return (
-        <li>{item.money}
-        {item.des}
-        {item.cate}</li>
-        )
-     })}</div>
+    <div>
+        {load.map((item)=>{
+           return(<li> {item.money} {item.des}{item.cate}</li>
+           )
+        })
+        }
+    </div>
         </>
     )
 }
